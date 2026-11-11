@@ -1,0 +1,33 @@
+name: Build complete Synthia v1 Android APK
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: android-actions/setup-android@v3
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+      - name: Restore ALL original Synthia v1 files
+        run: |
+          mkdir -p app/src/main/assets/synthia
+          unzip -q source/synthia-v1-fullstack-20260825-1932.zip -d /tmp/synthia-src
+          cp -a /tmp/synthia-src/synthia-v1/. app/src/main/assets/synthia/
+          test -f app/src/main/assets/synthia/toolfactory-core.js
+          test -f app/src/main/assets/synthia/synthia-integrated.mjs
+          test -f app/src/main/assets/synthia/phone-shell.html
+          test "$(find app/src/main/assets/synthia -type f | wc -l)" -eq 20
+      - name: Build debug APK
+        run: gradle :app:assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Synthia-v1-complete-debug-APK
+          path: app/build/outputs/apk/debug/*.apk
